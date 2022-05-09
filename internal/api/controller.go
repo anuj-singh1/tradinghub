@@ -29,6 +29,7 @@ func getAuthCodeUrl(c *gin.Context) {
 	globalInstance, _ := c.MustGet(config.GIN_ENV_GLOBAL_INSTANCE).(config.GlobalInstance)
 	url := fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&response_type=code&state=success",
 		config.FyersBaseUrl+config.GenerateAuthCodePath, globalInstance.Config.ClientId, globalInstance.Config.RedirectUrl)
+	log.GetLogger().Debugln(url)
 	c.JSON(http.StatusOK, map[string]string{
 		"url": url,
 	})
