@@ -43,7 +43,7 @@ func login(c *gin.Context) {
 		authCode, isexist = c.GetQuery("auth_code")
 		if isexist {
 			appID := fmt.Sprintf("%s:%s", globalinstance.Config.ClientId, globalinstance.Config.SecretKey)
-			log.GetLogger().Infoln(appID)
+			log.GetLogger().Debugln(appID)
 			appIDHash := fmt.Sprintf("%x", helper.NewSHA256([]byte(appID))[:])
 			var params = make(map[string]string)
 			params["grant_type"] = "authorization_code"
@@ -51,8 +51,8 @@ func login(c *gin.Context) {
 			params["code"] = authCode
 			bodyBytes, err := helper.PostApiExecutor(config.FyersBaseUrl+config.ValidateCodePath, params)
 			err = json.Unmarshal(bodyBytes, &response)
-			log.GetLogger().Infoln(response, err)
-			if err != nil && response.Code == 200 {
+			log.GetLogger().Debugln(response, err)
+			if err == nil && response.Code == 200 {
 				createToken := db.CreateTokenParams{
 					AccessToken: response.AccessToken,
 				}

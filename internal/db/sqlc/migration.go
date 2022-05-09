@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MIGRATE_DB             = "tradinghub"
+	MIGRATE_DB             = "traginghub"
 	MIGRATE_FILES          = "file://./migration"
 	NO_CHANGE_IN_MIGRATION = "no change"
 )

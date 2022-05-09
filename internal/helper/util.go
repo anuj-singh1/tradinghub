@@ -29,7 +29,7 @@ func PostApiExecutor(baseURL string, params map[string]string) ([]byte, error) {
 		return []byte(`{}`), errors.New("pre request failure")
 	}
 	req.Header.Add("Content-Type", "application/json")
-	log.Infof("Request [POST] url::%+v", req)
+	log.GetLogger().Debugln("Request [POST] url::%+v", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.GetLogger().Errorf(err.Error())

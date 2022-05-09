@@ -23,38 +23,6 @@ func SetupLogger() {
 	}
 }
 
-func Info(args ...interface{}) {
-	logger.Info(args...)
-}
-
-func Infof(format string, args ...interface{}) {
-	logger.Infof(format, args...)
-}
-
-func Debug(args ...interface{}) {
-	logger.Debug(args...)
-}
-
-func Debugf(format string, args ...interface{}) {
-	logger.Debugf(format, args...)
-}
-
-func Warn(args ...interface{}) {
-	logger.Warn(args...)
-}
-
-func Error(args ...interface{}) {
-	logger.Error(args...)
-}
-
-func Errorf(format string, args ...interface{}) {
-	logger.Errorf(format, args...)
-}
-
-func Fatal(args ...interface{}) {
-	logger.Fatal(args...)
-}
-
 func GetLogger() *logrus.Logger {
 	return logger
 }
