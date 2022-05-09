@@ -44,10 +44,8 @@ func main() {
 		log.Fatal("cannot create intialize server and routes:", err)
 	}
 
-	err = server.Start(envConfig.ServerAddress)
+	err = server.Start()
 	if err != nil {
 		log.Fatal("cannot start server:", err)
 	}
 }
-
-
