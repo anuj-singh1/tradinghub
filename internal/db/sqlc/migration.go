@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 const (
-	MIGRATE_DB             = "postgres"
-	MIGRATE_FILES          = "file://../db/migration"
+	MIGRATE_DB             = "tradinghub"
+	MIGRATE_FILES          = "file://./migration"
 	NO_CHANGE_IN_MIGRATION = "no change"
 )
 
