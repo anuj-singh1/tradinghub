@@ -67,23 +67,26 @@ func login(c *gin.Context) {
 func streamingApi(c *gin.Context) {
 	globalInstance, _ := c.MustGet(config.GIN_ENV_GLOBAL_INSTANCE).(config.GlobalInstance)
 	chanStream := make(chan QuotesResponse)
-	stock, err := c.GetQueryArray("stock")
+	stock, err := c.GetQueryArray("stock[]")
 	if !err {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "stock parameter is required",
 		})
+		return
 	}
 	interval, err := c.GetQuery("interval")
 	if !err {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "interval parameter is required",
 		})
+		return
 	}
 	duration, _err := strconv.Atoi(interval)
 	if _err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "interval value is invalid",
 		})
+		return
 	}
 	go func() {
 		defer close(chanStream)
@@ -94,7 +97,7 @@ func streamingApi(c *gin.Context) {
 	}()
 	c.Stream(func(w io.Writer) bool {
 		if msg, ok := <-chanStream; ok {
-			c.SSEvent("message", msg)
+			c.SSEvent(time.Now().String(), msg)
 			return true
 		}
 		return false
