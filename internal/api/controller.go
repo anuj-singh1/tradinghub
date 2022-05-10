@@ -1,10 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 	"tradingdata/internal/config"
 	db "tradingdata/internal/db/sqlc"
 	"tradingdata/internal/helper"
@@ -16,13 +21,6 @@ func ping(c *gin.Context) {
 		"status":  http.StatusOK,
 		"message": "Status OK",
 	})
-}
-
-type AuthCodeResponse struct {
-	Status      string      `json:"status"`
-	Code        int         `json:"code"`
-	Message     interface{} `json:"message,omitempty"`
-	AccessToken string      `json:"access_token"`
 }
 
 func getAuthCodeUrl(c *gin.Context) {
@@ -64,4 +62,83 @@ func login(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func streamingApi(c *gin.Context) {
+	globalInstance, _ := c.MustGet(config.GIN_ENV_GLOBAL_INSTANCE).(config.GlobalInstance)
+	chanStream := make(chan QuotesResponse)
+	stock, err := c.GetQueryArray("stock")
+	if !err {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "stock parameter is required",
+		})
+	}
+	interval, err := c.GetQuery("interval")
+	if !err {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "interval parameter is required",
+		})
+	}
+	duration, _err := strconv.Atoi(interval)
+	if _err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "interval value is invalid",
+		})
+	}
+	go func() {
+		defer close(chanStream)
+		for i := 0; i < 60/duration; i++ {
+			chanStream <- getQuotes(stock, globalInstance)
+			time.Sleep(time.Second * time.Duration(duration))
+		}
+	}()
+	c.Stream(func(w io.Writer) bool {
+		if msg, ok := <-chanStream; ok {
+			c.SSEvent("message", msg)
+			return true
+		}
+		return false
+	})
+}
+
+func getData(c *gin.Context) {
+	globalInstance, _ := c.MustGet(config.GIN_ENV_GLOBAL_INSTANCE).(config.GlobalInstance)
+	stock, err := c.GetQueryArray("stock")
+	if !err {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "stock parameter is required",
+		})
+	}
+	response := getQuotes(stock, globalInstance)
+	if response.Status != "ok" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "error fetching data " + response.Message,
+		})
+	} else {
+		c.JSON(http.StatusOK, response)
+	}
+}
+
+func getQuotes(stock []string, instance config.GlobalInstance) QuotesResponse {
+	logger := log.GetLogger()
+	response := QuotesResponse{Status: "failed", Message: ""}
+	params := make(map[string]string)
+	headers := make(map[string]string)
+	params["symbols"] = strings.Join(stock, ",")
+	token, _ := instance.TokenDb.GetLastToken(context.Background())
+	headers["Authorization"] = instance.Config.ClientId + ":" + token.AccessToken
+	headers["Content-Type"] = "application/json"
+	bodyBytes, err := helper.GetApiExecutor(config.FyersDataUrl+config.QuotesPath, params, headers)
+	if err != nil {
+		logger.Errorln(err)
+		response.Message = err.Error()
+		return response
+	}
+	err = json.Unmarshal(bodyBytes, &response)
+	if err != nil {
+		logger.Errorf("error in masrshaling body: %+v", err)
+		response.Message = err.Error()
+		return response
+	}
+	return response
 }
