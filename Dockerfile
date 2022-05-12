@@ -8,11 +8,12 @@ RUN go mod download
 
 COPY . /build
 WORKDIR /build/
-RUN go build
+RUN go build -o /tradingdata
 
 FROM alpine:3.14
-COPY --from=builder /build/tradingdata /build/app.env /app/
-COPY --from=builder /build/internal/db/migration /app/migration/
 WORKDIR /app
+COPY --from=builder /tradingdata .
+COPY app.env .
+COPY internal/db/migration /app/migration/
 EXPOSE 8080
 CMD ["./tradingdata"]

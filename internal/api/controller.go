@@ -88,6 +88,12 @@ func streamingApi(c *gin.Context) {
 		})
 		return
 	}
+	if duration > 60 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "interval should be less than 60",
+		})
+		return
+	}
 	go func() {
 		defer close(chanStream)
 		for i := 0; i < 60/duration; i++ {
@@ -97,7 +103,11 @@ func streamingApi(c *gin.Context) {
 	}()
 	c.Stream(func(w io.Writer) bool {
 		if msg, ok := <-chanStream; ok {
-			c.SSEvent(time.Now().String(), msg)
+			if msg.Status == "error" {
+				c.SSEvent(time.Now().String(), msg.Message)
+				return false
+			}
+			c.SSEvent(time.Now().String(), msg.Data)
 			return true
 		}
 		return false
@@ -124,7 +134,7 @@ func getData(c *gin.Context) {
 
 func getQuotes(stock []string, instance config.GlobalInstance) QuotesResponse {
 	logger := log.GetLogger()
-	response := QuotesResponse{Status: "failed", Message: ""}
+	response := QuotesResponse{Status: "error", Message: ""}
 	params := make(map[string]string)
 	headers := make(map[string]string)
 	params["symbols"] = strings.Join(stock, ",")
