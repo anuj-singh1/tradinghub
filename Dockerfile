@@ -13,7 +13,7 @@ RUN go build -o /tradingdata
 FROM alpine:3.14
 WORKDIR /app
 COPY --from=builder /tradingdata .
-COPY app.env .
-COPY internal/db/migration /app/migration/
+COPY --from=builder /build/app.env .
+COPY --from=builder /build/internal/db/migration /app/migration/
 EXPOSE 8080
 CMD ["./tradingdata"]
